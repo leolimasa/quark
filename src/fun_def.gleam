@@ -2,22 +2,11 @@ import gleam/list
 import gleam/result.{map_error, try}
 import gleam/io
 import glance.{NamedType}
-import gleam/option.{Some, type Option}
-
-pub type ArgType {
-  ArgText
-  ArgInt
-  ArgBool
-  ArgFloat
-  ArgBitArray
-}
-
-pub type Arg {
-  Arg(name: String, arg_type: ArgType, nullable: Bool)
-}
+import gleam/option.{type Option, Some}
+import sql
 
 pub type FunDef {
-  FunDef(name: String, args: List(Arg))
+  FunDef(name: String, args: List(sql.SqlCol))
 }
 
 pub type Error {
@@ -28,19 +17,25 @@ pub type Error {
   ParseError(glance.Error)
 }
 
-fn parse_basic_type(arg: glance.FunctionParameter, arg_type: Option(glance.Type)) -> Result(ArgType, Error) {
+fn parse_basic_type(
+  arg: glance.FunctionParameter,
+  arg_type: Option(glance.Type),
+) -> Result(sql.SqlType, Error) {
   case arg_type {
-    Some(NamedType("String", _, _)) -> Ok(ArgText)
-    Some(NamedType("Int", _, _)) -> Ok(ArgInt)
-    Some(NamedType("Bool", _, _)) -> Ok(ArgBool)
-    Some(NamedType("Float", _, _)) -> Ok(ArgFloat)
-    Some(NamedType("BitArray", _, _)) -> Ok(ArgBitArray)
+    Some(NamedType("String", _, _)) -> Ok(sql.SqlText)
+    Some(NamedType("Int", _, _)) -> Ok(sql.SqlInt)
+    Some(NamedType("Bool", _, _)) -> Ok(sql.SqlBoolean)
+    Some(NamedType("Float", _, _)) -> Ok(sql.SqlFloat)
+    Some(NamedType("BitArray", _, _)) -> Ok(sql.SqlBytea)
     Some(NamedType(x, _, _)) -> Error(InvalidArgType(x))
     _ -> Error(ArgTypeParseError(arg))
   }
 }
 
-fn parse_type(arg: glance.FunctionParameter, arg_type: Option(glance.Type)) -> Result(ArgType, Error) {
+fn parse_type(
+  arg: glance.FunctionParameter,
+  arg_type: Option(glance.Type),
+) -> Result(sql.SqlType, Error) {
   case arg_type {
     Some(NamedType("Option", _, [param])) -> {
       use basic_type <- try(parse_basic_type(arg, Some(param)))
@@ -50,7 +45,10 @@ fn parse_type(arg: glance.FunctionParameter, arg_type: Option(glance.Type)) -> R
   }
 }
 
-fn parse_arg(arg: glance.FunctionParameter) -> Result(Arg, Error) {
+fn parse_arg(
+  arg: glance.FunctionParameter,
+  pos: Int,
+) -> Result(sql.SqlCol, Error) {
   use type_ <- try(parse_type(arg, arg.type_))
   use name <- try(case arg.name {
     glance.Named(n) -> Ok(n)
@@ -60,20 +58,20 @@ fn parse_arg(arg: glance.FunctionParameter) -> Result(Arg, Error) {
     Some(NamedType("Option", _, _)) -> True
     _ -> False
   }
-  Ok(Arg(name, type_, is_null))
+  Ok(sql.SqlCol(name, type_, is_null, pos))
 }
 
 fn parse_args(
   args: List(glance.FunctionParameter),
-) -> Result(List(Arg), Error) {
-  case args {
-    [arg, ..rest] -> {
-      use parsed_arg <- try(parse_arg(arg))
-      use ok_rest <- try(parse_args(rest))
-      Ok([parsed_arg, ..ok_rest])
-    }
-    _ -> Ok([])
-  }
+) -> Result(List(sql.SqlCol), Error) {
+  use result <- try(
+    list.try_fold(args, #(1, []), fn(state, arg) {
+      let #(pos, result) = state
+      use parsed_arg <- try(parse_arg(arg, pos))
+      Ok(#(pos + 1, [parsed_arg, ..result]))
+    }),
+  )
+  Ok(result.1)
 }
 
 pub fn parse(fun_def: String) -> Result(FunDef, Error) {

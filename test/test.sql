@@ -4,14 +4,11 @@
 select * from company.employee where dept_id = :dept_id
 -- @end
 
--- @quark.insert
--- fn create_employee(name: String)
-insert into employee (name) values (:name)
-
--- @quark.insert create_employees(a)
--- TODO
-
--- @quark update
--- @quark update-all
-
-
+create table test_table (
+   id bigserial primary key,
+   str_col text not null,
+   int_col int,
+   bool_col boolean,
+   float_col float,
+   bytea_col bytea 
+);

@@ -1,8 +1,7 @@
 import gleam/io
 import glance
 
-
-pub fn generate_select(header: String, body: String) {
+pub fn generate_function_body(def: String, query: String) {
     
 }
 
