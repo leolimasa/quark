@@ -1,8 +1,8 @@
 import gleam/list
 import gleam/result.{map_error, try}
-import gleam/io
 import glance.{NamedType}
 import gleam/option.{type Option, Some}
+import gleam/int
 import sql
 
 pub type FunDef {
@@ -65,13 +65,16 @@ fn parse_args(
   args: List(glance.FunctionParameter),
 ) -> Result(List(sql.SqlCol), Error) {
   use result <- try(
-    list.try_fold(args, #(1, []), fn(state, arg) {
+    list.try_fold(args, #(0, []), fn(state, arg) {
       let #(pos, result) = state
       use parsed_arg <- try(parse_arg(arg, pos))
       Ok(#(pos + 1, [parsed_arg, ..result]))
     }),
   )
-  Ok(result.1)
+  let args =
+    result.1
+    |> list.sort(fn(a, b) { int.compare(a.pos, b.pos) })
+  Ok(args)
 }
 
 pub fn parse(fun_def: String) -> Result(FunDef, Error) {
@@ -87,10 +90,4 @@ pub fn parse(fun_def: String) -> Result(FunDef, Error) {
   let fun = def.definition
   use args <- try(parse_args(fun.parameters))
   Ok(FunDef(name: fun.name, args: args))
-}
-
-pub fn main() {
-  let assert Ok(parsed) =
-    glance.module("fn hello_world(arg1: Type1, arg2: Option(Type2))")
-  io.debug(parsed)
 }

@@ -7,12 +7,12 @@ pub fn parse_test() {
   let expected = fun_def.FunDef(
     name: "test_query",
     args: [
-      sql.SqlCol(name: "str_arg", type_: sql.SqlText, nullable: False, pos: 1),
-      sql.SqlCol(name: "int_arg", type_: sql.SqlInt, nullable: False, pos: 2),
-      sql.SqlCol(name: "bool_arg", type_: sql.SqlBoolean, nullable: False, pos: 3),
-      sql.SqlCol(name: "float_arg", type_: sql.SqlFloat, nullable: False, pos: 4),
-      sql.SqlCol(name: "bit_array_arg", type_: sql.SqlBytea, nullable: False, pos: 5),
-      sql.SqlCol(name: "nullable_arg", type_: sql.SqlBoolean, nullable: True, pos: 6)
+      sql.SqlCol(name: "str_arg", type_: sql.SqlText, nullable: False, pos: 0),
+      sql.SqlCol(name: "int_arg", type_: sql.SqlInt, nullable: False, pos: 1),
+      sql.SqlCol(name: "bool_arg", type_: sql.SqlBoolean, nullable: False, pos: 2),
+      sql.SqlCol(name: "float_arg", type_: sql.SqlFloat, nullable: False, pos: 3),
+      sql.SqlCol(name: "bit_array_arg", type_: sql.SqlBytea, nullable: False, pos: 4),
+      sql.SqlCol(name: "nullable_arg", type_: sql.SqlBoolean, nullable: True, pos: 5)
     ]
   )
   should.equal(result, Ok(expected))

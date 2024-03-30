@@ -1,11 +1,20 @@
 import gleam/io
 import glance
-
-pub fn generate_function_body(def: String, query: String) {
-    
-}
+import test_output
+import gleam/pgo
+import gleam/option.{None, Some}
 
 pub fn main() {
-  let assert Ok(parsed) = glance.module("fn employees(arg1: String, arg2: String)")
-  io.debug(parsed)
+  let db =
+    pgo.connect(
+      pgo.Config(
+        ..pgo.default_config(),
+        host: "localhost",
+        database: "testdb",
+        user: "test",
+        password: option.Some("test"),
+        port: 55_123,
+      ),
+    )
+  io.debug(test_output.test_query(db, Some("test"), 1))
 }
